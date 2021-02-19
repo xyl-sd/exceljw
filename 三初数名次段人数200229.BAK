@@ -93,8 +93,8 @@ creat table pjtjk(¿¼ÆÀ°à¼¶ c(3),½¨µµÊı n(8),ÌØÊâ¼õÉÙ n(8) ,¿¼ÆÀÈËÊı n(8,0),Æ½¾ù·
 		
 		insert into pjtjk(¿¼ÆÀ°à¼¶,½¨µµÊı,ÌØÊâ¼õÉÙ) values ("921",61,0)
 		insert into pjtjk(¿¼ÆÀ°à¼¶,½¨µµÊı,ÌØÊâ¼õÉÙ) values ("922",59,0) &&
-		insert into pjtjk(¿¼ÆÀ°à¼¶,½¨µµÊı,ÌØÊâ¼õÉÙ) values ("923",43,0)
-		insert into pjtjk(¿¼ÆÀ°à¼¶,½¨µµÊı,ÌØÊâ¼õÉÙ) values ("924",46,0)
+		insert into pjtjk(¿¼ÆÀ°à¼¶,½¨µµÊı,ÌØÊâ¼õÉÙ) values ("923",61,0)
+		insert into pjtjk(¿¼ÆÀ°à¼¶,½¨µµÊı,ÌØÊâ¼õÉÙ) values ("924",61,0)
 
 	case nj=700  &&20200224È·¶¨£¬ËùÓĞÑ§¼®Éú£¬È¥³ıÒòÉÏÒ»Äê¼¶ĞİÑ§¶ø²»¿¼ÆÀµÄ
 		insert into pjtjk(¿¼ÆÀ°à¼¶,½¨µµÊı,ÌØÊâ¼õÉÙ) values ("701",51,1)

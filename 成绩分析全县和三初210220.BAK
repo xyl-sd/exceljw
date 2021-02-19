@@ -1,137 +1,74 @@
-******统计三初各班的各段成绩\名次的人数******
+******统计临沭县各校or三初各班的各段成绩\名次的人数******
 *
-*  20200229调试成功
+*	20210220 以三初统计为底，添加全县分析内容，试整合成一个程序
+*
 *  先运行本程序，在提示后打开成绩表
+*	建档数在程序最末，直接下拉查找模块pjtjktc
 *
 *	本程序同时计算学科成绩和班级成绩，当前按7年级1-8班，8年级1-4班为智慧班
 *	每次需确定建档数和智慧班
 **********************************************
 set talk off
 clear 
-messagebox('确认各字段命名均为汉字，特别注意：姓名、考号、考评班级、道法、总成绩、学校。————点确定后选择成绩数据库',1)
-use ? in 1		&&打开成绩表
-sele 1
-go top
-nj=int(val(substr(考号,3,1))+6)*100 &&获取年级为700，800，900
 	if .not. directory('e:\cjfx')		 &&创建目录“成绩分析”
 		md e:\cjfx
 		? '新建目录e:\cjfx，文件存放于此目录'
 	endif
 	set default to e:\cjfx				&&默认目录
 		? '文件默认存放于e:\cjfx'
+messagebox('确认各字段命名均为汉字，特别注意：姓名、考号、班级、道法、总成绩、学校。————点确定后选择成绩数据库',1)
+	use ? in 1		&&打开成绩表
+	sele 1
+	go top
+	nj=int(val(substr(考号,3,1))+6)*100 &&获取年级为700，800，900
+	 
+	  xz='3'  &&选择1为全县，3为三初
+		     
+		      @8,20 SAY '选择分析目标：1、全县，2、三初:' get xz &&*********************************************************
+		    
+		      read
+		fxmb=val(xz) &&分析目标
 
-creat table bzk(姓名 c(8),考号 c(9),考评班级 c(8), 语文 n(8),语文名次 n(8),数学 n(8),数学名次 n(8), ;
+	
+creat table bzk(姓名 c(8),考号 c(9),班级 c(8), 语文 n(8),语文名次 n(8),数学 n(8),数学名次 n(8), ;
 	英语 n(8),英语名次 n(8),物理 n(8),物理名次 n(8),化学 n(8),化学名次 n(8),道法 n(8),道法名次 n(8), ;
 	历史 n(8),历史名次 n(8),地理 n(8),地理名次 n(8),生物 n(8),生物名次 n(8), ;
-	总成绩 n(8),班级排名 n(8),学校排名 n(8),年级排名 n(8),学校 c(8) ) &&标准库
-creat table tjk(考评班级 c(8),总分上 n(8),总人数 n(8),总成绩 n(8,2),语文 n(8,2),数学 n(8,2),英语 n(8,2), ;
-	物理 n(8,2),化学 n(8,2),道法 n(8,2),历史 n(8,2),地理 n(8,2),生物 n(8,2),进线 c(8) ) &&统计库
+	总成绩 n(8),班级排名 n(8),学校排名 n(8),年级排名 n(8),学校 c(8) ) &&标准库，与县析相同
+creat table tjk(学校 c(8),班级 c(8),总分上 n(8),总人数 n(8),总成绩 n(8,2),语文 n(8,2),数学 n(8,2),英语 n(8,2), ;
+	物理 n(8,2),化学 n(8,2),道法 n(8,2),历史 n(8,2),地理 n(8,2),生物 n(8,2),进线 c(8) ,总分率 n(8,2),;
+	语文率 n(8,2),数学率 n(8,2),英语率 n(8,2), 物理率 n(8,2),化学率 n(8,2),;
+	道法率 n(8,2),历史率 n(8,2),地理率 n(8,2),生物率 n(8,2),校名 c(8) ) &&统计库,县析增加各种率
+
+creat table mck(mc n(8)) &&名次库,仅县析用
+	insert into mck(mc) value (10)
+	insert into mck(mc) value (50)
+	insert into mck(mc) value (100)
+	insert into mck(mc) value (200)
+	insert into mck(mc) value (500)
+	insert into mck(mc) value (700)
+	insert into mck(mc) value (1000) 
+	insert into mck(mc) value (1500)
+	insert into mck(mc) value (2000)
+	insert into mck(mc) value (2500)
+	insert into mck(mc) value (3000)
+	insert into mck(mc) value (3500)
+	insert into mck(mc) value (4000)
+	insert into mck(mc) value (4500) 
+
+creat table pjtjk(班级 c(3),建档数 n(8),特殊减少 n(8) ,考评人数 n(8,0),平均分 n(8,3), ;
+		语文 n(8,3),数学 n(8,3),英语 n(8,3),物理 n(8,3),化学 n(8,3),道法 n(8,3),历史 n(8,3),地理 n(8,3),生物 n(8,3),;
+		单位 c(8),代码 c(2),最高分 n(8),人数98 n(8,0),平均分98 n(8,3),平均98名次 n(8,0)	) &&平均分统计库,
+		&&	上面第三行为县析用，后期注意把人数98替换为考评人人数，平均分98及平均98之后的98均不显示，县析时考评人数=建档数*0.98
 
 
-creat table pjtjk(考评班级 c(3),建档数 n(8),特殊减少 n(8) ,考评人数 n(8,0),平均分 n(8,3), ;
-		语文 n(8,3),数学 n(8,3),英语 n(8,3),物理 n(8,3),化学 n(8,3),道法 n(8,3),历史 n(8,3),地理 n(8,3),生物 n(8,3)	) &&平均分统计库
-	do case
-	case nj=800 		&&="insert into pjtjk(考评班级,建档数,特殊减少) values ("""&$a2&""","&$b2&","&C2&")"
-	&&20210131更新，801-808均按51进行平均分考评，缺的人数由上官确定，进行一人算入两班。
-	
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("801",51,0) &&+1,1124加1，已加
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("802",51,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("803",51,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("804",51,0) &&+1，1124加1，已加
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("805",51,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("806",51,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("807",51,0) 
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("808",51,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("809",50,0)&&0131-1
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("810",50,0)&&0131-1
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("811",50,1)	&&含张凯鑫，不含王铭顺（有档）在临沂体校，李函芮休学，周彦希病假
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("812",50,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("813",52,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("814",50,1)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("815",49,0)&&0131-1
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("816",51,2)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("817",49,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("818",50,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("819",50,0)&&0131-1
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("820",49,0)&&0131-1
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("821",48,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("822",50,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("823",49,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("824",50,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("825",50,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("826",50,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("827",50,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("828",49,1)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("829",51,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("830",51,0)
+do pjtjktc with nj,fxmb 	&&平均统计库填充，做成过程
+	** 将平均库放在最后，方便更新数据时直接下接找到
 
 
-	case nj=900
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("901",60,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("902",60,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("903",60,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("904",60,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("905",60,0)
-		
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("906",61,2)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("907",61,0) &&
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("908",60,1)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("909",60,1)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("910",60,0)
-		
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("911",60,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("912",61,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("913",60,0) &&0131-1
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("914",60,1) &&
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("915",61,0)
-		
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("916",60,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("917",61,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("918",59,0) &&
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("919",61,2)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("920",61,0)
-		
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("921",61,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("922",59,0) &&
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("923",43,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("924",46,0)
-
-	case nj=700  &&20200224确定，所有学籍生，去除因上一年级休学而不考评的
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("701",51,1)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("702",51,0)&&0131-1
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("703",51,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("704",51,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("705",51,0)
-		
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("706",51,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("707",50,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("708",51,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("709",50,0)&&0131-1
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("710",51,0)
-		
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("711",51,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("712",50,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("713",51,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("714",51,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("715",53,0)
-		
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("716",53,0)&&0131+1
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("717",54,0)&&0131+2
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("718",53,2)&&0131+1
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("719",53,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("720",53,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("721",54,1)&&0131+1
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("722",53,0)&&0131+1
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("723",53,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("724",53,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("725",53,0)
-		insert into pjtjk(考评班级,建档数,特殊减少) values ("726",53,1)&&0131+2
-
-	endcase
 		replace all 考评人数 with 建档数-int(nj/100)+6-特殊减少 &&年级7为减1人，8为减2人，9为减3人
-creat table bjfx(考评班级 c(8),第1 n(8),前10 n(8),前20 n(8),前1000 n(8),前4500 n(8),平均分 n(8,3), ;
+creat table bjfx(班级 c(8),第1 n(8),前10 n(8),前20 n(8),前1000 n(8),前4500 n(8),平均分 n(8,3), ;
 	奖10 n(8),奖45 n(8),名次10 n(8),名次45 n(8),名次平均 n(8),名次和 n(10 ,6),排名 n(8),赋分 n(8,2) ) &&班级分析库
-	append from pjtjk fields 考评班级		
+	append from pjtjk fields 班级		
 
 sele 1
 erase xx.dbf
@@ -194,48 +131,48 @@ DO WHILE 名次1<=100000
 		  sele tjk
 		      appe blan
 		      repl 语文 with mc1,数学 with mc2,英语 with mc3,总分上 with 名次1,物理 with mc4,化学  with mc5, ;
-		      道法 with mc6,历史 with mc7,地理 with mc8,生物 with mc9,总成绩 with mc0,考评班级 with  '分值'
+		      道法 with mc6,历史 with mc7,地理 with mc8,生物 with mc9,总成绩 with mc0,班级 with  '分值'
 
 		* 统计各班人数，双进线
 		sele bzk
 		go top
-		* nj=int(val(考评班级)/100)*100
+		* nj=int(val(班级)/100)*100
 		nj=int(val(substr(考号,3,1))+6)*100
 		for i=nj+1 to nj+30
 		sele bzk
 			go top
 			ibj=substr(str(i),8,3)+space(5) &&将班级由数值变字符
-		    count to x for 考评班级=ibj
+		    count to x for 班级=ibj
 		    *单进
-		    count to gf1 for 语文>=mc1 .and. 考评班级=ibj
-		    count to gf2 for 数学>=mc2 .and. 考评班级=ibj
-		    count to gf3 for 英语>=mc3 .and. 考评班级=ibj
-		    count to gf4 for 物理>=mc4 .and. 考评班级=ibj
-		    count to gf5 for 化学>=mc5 .and. 考评班级=ibj
-		    count to gf6 for 道法>=mc6 .and. 考评班级=ibj
-		    count to gf7 for 历史>=mc7 .and. 考评班级=ibj
-		    count to gf8 for 地理>=mc8 .and. 考评班级=ibj
-		    count to gf9 for 生物>=mc9 .and. 考评班级=ibj
-		    count to gf0 for 总成绩>=mc0 .and. 考评班级=ibj
+		    count to gf1 for 语文>=mc1 .and. 班级=ibj
+		    count to gf2 for 数学>=mc2 .and. 班级=ibj
+		    count to gf3 for 英语>=mc3 .and. 班级=ibj
+		    count to gf4 for 物理>=mc4 .and. 班级=ibj
+		    count to gf5 for 化学>=mc5 .and. 班级=ibj
+		    count to gf6 for 道法>=mc6 .and. 班级=ibj
+		    count to gf7 for 历史>=mc7 .and. 班级=ibj
+		    count to gf8 for 地理>=mc8 .and. 班级=ibj
+		    count to gf9 for 生物>=mc9 .and. 班级=ibj
+		    count to gf0 for 总成绩>=mc0 .and. 班级=ibj
 		    	sele tjk
 			append blank
 			 repl 总人数  with x,语文 with gf1,数学 with gf2,英语 with gf3,总分上 with 名次1,物理 with gf4,化学  with gf5, ;
-			 道法 with gf6,历史 with gf7,地理 with gf8,生物 with gf9,总成绩 with gf0,考评班级 with ibj,进线 with "单进线"
+			 道法 with gf6,历史 with gf7,地理 with gf8,生物 with gf9,总成绩 with gf0,班级 with ibj,进线 with "单进线"
 		    *双进
 		    sele bzk
-			count to gf1 for 语文>=mc1 .and. 考评班级=ibj .and. 总成绩 >=mc0
-		    count to gf2 for 数学>=mc2 .and. 考评班级=ibj .and. 总成绩 >=mc0
-		    count to gf3 for 英语>=mc3 .and. 考评班级=ibj .and. 总成绩 >=mc0
-		    count to gf4 for 物理>=mc4 .and. 考评班级=ibj .and. 总成绩 >=mc0
-		    count to gf5 for 化学>=mc5 .and. 考评班级=ibj .and. 总成绩 >=mc0
-		    count to gf6 for 道法>=mc6 .and. 考评班级=ibj .and. 总成绩 >=mc0
-		    count to gf7 for 历史>=mc7 .and. 考评班级=ibj .and. 总成绩 >=mc0
-		    count to gf8 for 地理>=mc8 .and. 考评班级=ibj .and. 总成绩 >=mc0
-		    count to gf9 for 生物>=mc9 .and. 考评班级=ibj .and. 总成绩 >=mc0
+			count to gf1 for 语文>=mc1 .and. 班级=ibj .and. 总成绩 >=mc0
+		    count to gf2 for 数学>=mc2 .and. 班级=ibj .and. 总成绩 >=mc0
+		    count to gf3 for 英语>=mc3 .and. 班级=ibj .and. 总成绩 >=mc0
+		    count to gf4 for 物理>=mc4 .and. 班级=ibj .and. 总成绩 >=mc0
+		    count to gf5 for 化学>=mc5 .and. 班级=ibj .and. 总成绩 >=mc0
+		    count to gf6 for 道法>=mc6 .and. 班级=ibj .and. 总成绩 >=mc0
+		    count to gf7 for 历史>=mc7 .and. 班级=ibj .and. 总成绩 >=mc0
+		    count to gf8 for 地理>=mc8 .and. 班级=ibj .and. 总成绩 >=mc0
+		    count to gf9 for 生物>=mc9 .and. 班级=ibj .and. 总成绩 >=mc0
 			sele tjk
 			append blank
 			 repl 总人数  with x,语文 with gf1,数学 with gf2,英语 with gf3,总分上 with 名次1,物理 with gf4,化学  with gf5, ;
-			 道法 with gf6,历史 with gf7,地理 with gf8,生物 with gf9,总成绩 with gf0,考评班级 with ibj,进线 with "双进线"
+			 道法 with gf6,历史 with gf7,地理 with gf8,生物 with gf9,总成绩 with gf0,班级 with ibj,进线 with "双进线"
 			?? ibj
 		endfor
 
@@ -244,36 +181,36 @@ DO WHILE 名次1<=100000
 		go top
 		    count all to x 
 		    *单进
-		    count to gf1 for 语文>=mc1 .and. len(alltrim(考评班级))=3
-		    count to gf2 for 数学>=mc2 .and. len(alltrim(考评班级))=3
-		    count to gf3 for 英语>=mc3 .and. len(alltrim(考评班级))=3
-		    count to gf4 for 物理>=mc4 .and. len(alltrim(考评班级))=3
-		    count to gf5 for 化学>=mc5 .and. len(alltrim(考评班级))=3
-		    count to gf6 for 道法>=mc6 .and. len(alltrim(考评班级))=3
-		    count to gf7 for 历史>=mc7 .and. len(alltrim(考评班级))=3
-		    count to gf8 for 地理>=mc8 .and. len(alltrim(考评班级))=3
-		    count to gf9 for 生物>=mc9 .and. len(alltrim(考评班级))=3
-		    count to gf0 for 总成绩>=mc0 .and. len(alltrim(考评班级))=3
+		    count to gf1 for 语文>=mc1 .and. len(alltrim(班级))=3
+		    count to gf2 for 数学>=mc2 .and. len(alltrim(班级))=3
+		    count to gf3 for 英语>=mc3 .and. len(alltrim(班级))=3
+		    count to gf4 for 物理>=mc4 .and. len(alltrim(班级))=3
+		    count to gf5 for 化学>=mc5 .and. len(alltrim(班级))=3
+		    count to gf6 for 道法>=mc6 .and. len(alltrim(班级))=3
+		    count to gf7 for 历史>=mc7 .and. len(alltrim(班级))=3
+		    count to gf8 for 地理>=mc8 .and. len(alltrim(班级))=3
+		    count to gf9 for 生物>=mc9 .and. len(alltrim(班级))=3
+		    count to gf0 for 总成绩>=mc0 .and. len(alltrim(班级))=3
 			sele tjk
 			append blank
 			 repl 总人数  with x,语文 with gf1,数学 with gf2,英语 with gf3,总分上 with 名次1,物理 with gf4,化学  with gf5, ;
-			 道法 with gf6,历史 with gf7,地理 with gf8,生物 with gf9,总成绩 with gf0,考评班级 with '全校',进线 with "单进线"
+			 道法 with gf6,历史 with gf7,地理 with gf8,生物 with gf9,总成绩 with gf0,班级 with '全校',进线 with "单进线"
 			
 			    *双进
 			    sele bzk
-		    count to gf1 for 语文>=mc1 .and. 总成绩 >=mc0 .and. len(alltrim(考评班级))=3
-		    count to gf2 for 数学>=mc2 .and. 总成绩 >=mc0 .and. len(alltrim(考评班级))=3
-		    count to gf3 for 英语>=mc3 .and. 总成绩 >=mc0 .and. len(alltrim(考评班级))=3
-		    count to gf4 for 物理>=mc4 .and. 总成绩 >=mc0 .and. len(alltrim(考评班级))=3
-		    count to gf5 for 化学>=mc5 .and. 总成绩 >=mc0 .and. len(alltrim(考评班级))=3
-		    count to gf6 for 道法>=mc6 .and. 总成绩 >=mc0 .and. len(alltrim(考评班级))=3
-		    count to gf7 for 历史>=mc7 .and. 总成绩 >=mc0 .and. len(alltrim(考评班级))=3
-		    count to gf8 for 地理>=mc8 .and. 总成绩 >=mc0 .and. len(alltrim(考评班级))=3
-		    count to gf9 for 生物>=mc9 .and. 总成绩 >=mc0 .and. len(alltrim(考评班级))=3
+		    count to gf1 for 语文>=mc1 .and. 总成绩 >=mc0 .and. len(alltrim(班级))=3
+		    count to gf2 for 数学>=mc2 .and. 总成绩 >=mc0 .and. len(alltrim(班级))=3
+		    count to gf3 for 英语>=mc3 .and. 总成绩 >=mc0 .and. len(alltrim(班级))=3
+		    count to gf4 for 物理>=mc4 .and. 总成绩 >=mc0 .and. len(alltrim(班级))=3
+		    count to gf5 for 化学>=mc5 .and. 总成绩 >=mc0 .and. len(alltrim(班级))=3
+		    count to gf6 for 道法>=mc6 .and. 总成绩 >=mc0 .and. len(alltrim(班级))=3
+		    count to gf7 for 历史>=mc7 .and. 总成绩 >=mc0 .and. len(alltrim(班级))=3
+		    count to gf8 for 地理>=mc8 .and. 总成绩 >=mc0 .and. len(alltrim(班级))=3
+		    count to gf9 for 生物>=mc9 .and. 总成绩 >=mc0 .and. len(alltrim(班级))=3
 			sele tjk
 			append blank
 			 repl 总人数  with x,语文 with gf1,数学 with gf2,英语 with gf3,总分上 with 名次1,物理 with gf4,化学  with gf5, ;
-			 道法 with gf6,历史 with gf7,地理 with gf8,生物 with gf9,总成绩 with gf0,考评班级 with '全校',进线 with "双进线"
+			 道法 with gf6,历史 with gf7,地理 with gf8,生物 with gf9,总成绩 with gf0,班级 with '全校',进线 with "双进线"
 			? '本名次段进线人数统计完成'
 
 
@@ -297,7 +234,7 @@ sele pjtjk
 go top
 do while .not.eof() &&遍历pjtjk
 	sele pjbzk
-		set filter to 考评班级=alltrim(pjtjk.考评班级)
+		set filter to 班级=alltrim(pjtjk.班级)
 		do paixu with "语文","语文名次"
 		do paixu with "数学","数学名次"
 		do paixu with "英语","英语名次"
@@ -322,8 +259,8 @@ do while .not.eof() &&遍历pjtjk
 	sele tjk
       appe blan
       repl 语文 with mc1/kprs ,数学 with mc2/kprs ,英语 with mc3/kprs ,物理 with mc4/kprs ,化学  with mc5/kprs , 总人数 with kprs,;
-      道法 with mc6/kprs ,历史 with mc7/kprs ,地理 with mc8/kprs ,生物 with mc9/kprs ,总成绩 with mc0/kprs ,考评班级 with  pjtjk.考评班级,进线 with '平均分'
-		?? 考评班级
+      道法 with mc6/kprs ,历史 with mc7/kprs ,地理 with mc8/kprs ,生物 with mc9/kprs ,总成绩 with mc0/kprs ,班级 with  pjtjk.班级,进线 with '平均分'
+		?? 班级
 		
 	sele pjtjk
 		skip
@@ -335,7 +272,7 @@ set filter to
 *分析班级成绩
 sele bzk
 go top
-copy to tembj next 50 fields 考评班级,学校,总成绩
+copy to tembj next 50 fields 班级,学校,总成绩
 use tembj in 0
 sele tembj
 	go 1
@@ -347,15 +284,15 @@ sele tembj
 sele bjfx
 	go top
 	do while .not. eof()
-		bj=考评班级
+		bj=班级
 		sele tembj &&前20名统计
-			count to tj1 for 总成绩>=gf1 .and. 考评班级=bj
-			count to tj10 for 总成绩>=gf10 .and. 考评班级=bj
-			count to tj20 for 总成绩>=gf20 .and. 考评班级=bj
+			count to tj1 for 总成绩>=gf1 .and. 班级=bj
+			count to tj10 for 总成绩>=gf10 .and. 班级=bj
+			count to tj20 for 总成绩>=gf20 .and. 班级=bj
 		sele tjk &&1000，4500，平均分统计
-			average 总成绩 to tj1000 for 考评班级=bj .and. 进线="单进线" .and. 总分上=mc1000  &&1000 
-			average 总成绩 to tj4500 for 考评班级=bj .and. 进线="单进线" .and. 总分上=mc4500  &&4500 
-			average 总成绩 to tjpj for 考评班级=bj .and. 进线="平均分"  
+			average 总成绩 to tj1000 for 班级=bj .and. 进线="单进线" .and. 总分上=mc1000  &&1000 
+			average 总成绩 to tj4500 for 班级=bj .and. 进线="单进线" .and. 总分上=mc4500  &&4500 
+			average 总成绩 to tjpj for 班级=bj .and. 进线="平均分"  
 		sele bjfx
 		repl 第1 with tj1,前10 with tj10,前20 with tj20 ,前1000 with tj1000 ,前4500 with tj4500 ,平均分 with tjpj
 		skip
@@ -365,21 +302,21 @@ sele bjfx
 
 	do case
 		case nj=700  &&智慧班1-8
-			set filter to val(考评班级)<=714
+			set filter to val(班级)<=714
 			do zhihui
-			set filter to val(考评班级)>714
+			set filter to val(班级)>714
 			do zhihui
 			set filter to
 		case nj=800  &&智慧班1-4
-			set filter to val(考评班级)<=808
+			set filter to val(班级)<=808
 			do zhihui
-			set filter to val(考评班级)>808
+			set filter to val(班级)>808
 			do zhihui
 			set filter to
 		case nj=900 
-			set filter to val(考评班级)<=904
+			set filter to val(班级)<=904
 			do zhihui
-			set filter to val(考评班级)>904
+			set filter to val(班级)>904
 			do zhihui
 			set filter to
 	endcase
@@ -393,7 +330,7 @@ erase tembj.dbf
 
 ******************************************************
 sele tjk
-sort to x0  on 总分上/a,进线/a,考评班级/a
+sort to x0  on 总分上/a,进线/a,班级/a
 use x0.dbf
 dele all for 总成绩=0
 pack
@@ -401,7 +338,7 @@ do case
 	case nj=700
 	erase 七年级名次人数.xls
 	copy to 七年级名次人数.xls type xls ;
-		fields 考评班级,总分上,总人数,总成绩,语文,数学,英语,道法,历史,地理,生物,进线
+		fields 班级,总分上,总人数,总成绩,语文,数学,英语,道法,历史,地理,生物,进线
 	erase jxbh7.dbf
 	copy to jxbh7.dbf
 	sele bjfx
@@ -412,7 +349,7 @@ do case
 	case nj=800
 	erase 八年级名次人数.xls
 	copy to 八年级名次人数.xls type xls ;
-		fields 考评班级,总分上,总人数,总成绩,语文,数学,英语,物理,道法,历史,地理,生物,进线
+		fields 班级,总分上,总人数,总成绩,语文,数学,英语,物理,道法,历史,地理,生物,进线
 	erase jxbh8.dbf
 	copy to jxbh8.dbf
 		sele bjfx
@@ -423,7 +360,7 @@ do case
 	case nj=900
 	erase 九年级名次人数.xls
 	copy to 九年级名次人数.xls type xls ;
-		fields 考评班级,总分上,总人数,总成绩,语文,数学,英语,物理,化学,道法,历史,进线
+		fields 班级,总分上,总人数,总成绩,语文,数学,英语,物理,化学,道法,历史,进线
 	erase jxbh9.dbf
 	copy to jxbh9.dbf
 		sele bjfx
@@ -499,3 +436,182 @@ procedure zhihui
 	replace 名次和 with 200-名次和 all
 ***************************
 ***************************
+* 过程：平均统计库填充
+***************************
+	procedure pjtjktc
+	parameters nj,fxmb &&接受变量，字段名,名次字段
+	do case
+	case nj=700 .and. fxmb=1		&&="insert into pjtjk(单位,代码,建档数) values ("""&$G2&""","""&$F2&""","&C2&")"
+		insert into pjtjk(单位,代码,建档数) values ("一初","01",709)
+		insert into pjtjk(单位,代码,建档数) values ("二初","02",1578)
+		insert into pjtjk(单位,代码,建档数) values ("三初","03",1333)
+		insert into pjtjk(单位,代码,建档数) values ("四初","04",786)
+		insert into pjtjk(单位,代码,建档数) values ("周庄","05",191)
+		insert into pjtjk(单位,代码,建档数) values ("店头","06",215)
+		insert into pjtjk(单位,代码,建档数) values ("石门","07",449)
+		insert into pjtjk(单位,代码,建档数) values ("古龙","08",206)
+		insert into pjtjk(单位,代码,建档数) values ("大兴","09",271)
+		insert into pjtjk(单位,代码,建档数) values ("蛟龙","10",387)
+		insert into pjtjk(单位,代码,建档数) values ("东盘","11",139)
+		insert into pjtjk(单位,代码,建档数) values ("玉山","12",323)
+		insert into pjtjk(单位,代码,建档数) values ("青云","14",284)
+		insert into pjtjk(单位,代码,建档数) values ("白旄","15",370)
+		insert into pjtjk(单位,代码,建档数) values ("五初","16",298)
+		insert into pjtjk(单位,代码,建档数) values ("南古","17",196)
+		insert into pjtjk(单位,代码,建档数) values ("曹庄","18",252)
+		insert into pjtjk(单位,代码,建档数) values ("新星","19",56)
+		insert into pjtjk(单位,代码,建档数) values ("英才","20",49)
+		insert into pjtjk(单位,代码,建档数) values ("兴华","21",318)
+		insert into pjtjk(单位,代码,建档数) values ("北城","22",656)
+		insert into pjtjk(单位,代码,建档数) values ("全县","99",9066)
+
+
+	case nj=800 .and. fxmb=1	
+		insert into pjtjk(单位,代码,建档数) values ("一初","01",576)
+		insert into pjtjk(单位,代码,建档数) values ("二初","02",1419)
+		insert into pjtjk(单位,代码,建档数) values ("三初","03",1501)
+		insert into pjtjk(单位,代码,建档数) values ("四初","04",643)
+		insert into pjtjk(单位,代码,建档数) values ("周庄","05",176)
+		insert into pjtjk(单位,代码,建档数) values ("店头","06",212)
+		insert into pjtjk(单位,代码,建档数) values ("石门","07",419)
+		insert into pjtjk(单位,代码,建档数) values ("古龙","08",154)
+		insert into pjtjk(单位,代码,建档数) values ("大兴","09",230)
+		insert into pjtjk(单位,代码,建档数) values ("蛟龙","10",307)
+		insert into pjtjk(单位,代码,建档数) values ("东盘","11",116)
+		insert into pjtjk(单位,代码,建档数) values ("玉山","12",310)
+		insert into pjtjk(单位,代码,建档数) values ("青云","14",258)
+		insert into pjtjk(单位,代码,建档数) values ("白旄","15",321)
+		insert into pjtjk(单位,代码,建档数) values ("五初","16",243)
+		insert into pjtjk(单位,代码,建档数) values ("南古","17",151)
+		insert into pjtjk(单位,代码,建档数) values ("曹庄","18",218)
+		insert into pjtjk(单位,代码,建档数) values ("新星","19",51)
+		insert into pjtjk(单位,代码,建档数) values ("英才","20",47)
+		insert into pjtjk(单位,代码,建档数) values ("兴华","21",199)
+		insert into pjtjk(单位,代码,建档数) values ("北城","22",352)
+		insert into pjtjk(单位,代码,建档数) values ("全县","99",7903)
+
+
+
+	case nj=900 .and. fxmb=1	
+		insert into pjtjk(单位,代码,建档数) values ("一初","01",599)
+		insert into pjtjk(单位,代码,建档数) values ("二初","02",1295)
+		insert into pjtjk(单位,代码,建档数) values ("三初","03",1232)
+		insert into pjtjk(单位,代码,建档数) values ("四初","04",597)
+		insert into pjtjk(单位,代码,建档数) values ("周庄","05",193)
+		insert into pjtjk(单位,代码,建档数) values ("店头","06",258)
+		insert into pjtjk(单位,代码,建档数) values ("石门","07",483)
+		insert into pjtjk(单位,代码,建档数) values ("古龙","08",168)
+		insert into pjtjk(单位,代码,建档数) values ("大兴","09",216)
+		insert into pjtjk(单位,代码,建档数) values ("蛟龙","10",246)
+		insert into pjtjk(单位,代码,建档数) values ("东盘","11",92)
+		insert into pjtjk(单位,代码,建档数) values ("玉山","12",307)
+		insert into pjtjk(单位,代码,建档数) values ("青云","14",260)
+		insert into pjtjk(单位,代码,建档数) values ("白旄","15",335)
+		insert into pjtjk(单位,代码,建档数) values ("五初","16",259)
+		insert into pjtjk(单位,代码,建档数) values ("南古","17",150)
+		insert into pjtjk(单位,代码,建档数) values ("曹庄","18",219)
+		insert into pjtjk(单位,代码,建档数) values ("新星","19",20)
+		insert into pjtjk(单位,代码,建档数) values ("英才","20",68)
+		insert into pjtjk(单位,代码,建档数) values ("兴华","21",184)
+		insert into pjtjk(单位,代码,建档数) values ("北城","22",311)
+		insert into pjtjk(单位,代码,建档数) values ("全县","99",7492)
+
+	case nj=800 .and. fxmb=3	 		&&="insert into pjtjk(班级,建档数,特殊减少) values ("""&$a2&""","&$b2&","&C2&")"
+	&&20210131更新，801-808均按51进行平均分考评，缺的人数由上官确定，进行一人算入两班。
+	
+		insert into pjtjk(班级,建档数,特殊减少) values ("801",51,0) &&+1,1124加1，已加
+		insert into pjtjk(班级,建档数,特殊减少) values ("802",51,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("803",51,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("804",51,0) &&+1，1124加1，已加
+		insert into pjtjk(班级,建档数,特殊减少) values ("805",51,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("806",51,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("807",51,0) 
+		insert into pjtjk(班级,建档数,特殊减少) values ("808",51,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("809",50,0)&&0131-1
+		insert into pjtjk(班级,建档数,特殊减少) values ("810",50,0)&&0131-1
+		insert into pjtjk(班级,建档数,特殊减少) values ("811",50,1)	&&含张凯鑫，不含王铭顺（有档）在临沂体校，李函芮休学，周彦希病假
+		insert into pjtjk(班级,建档数,特殊减少) values ("812",50,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("813",52,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("814",50,1)
+		insert into pjtjk(班级,建档数,特殊减少) values ("815",49,0)&&0131-1
+		insert into pjtjk(班级,建档数,特殊减少) values ("816",51,2)
+		insert into pjtjk(班级,建档数,特殊减少) values ("817",49,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("818",50,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("819",50,0)&&0131-1
+		insert into pjtjk(班级,建档数,特殊减少) values ("820",49,0)&&0131-1
+		insert into pjtjk(班级,建档数,特殊减少) values ("821",48,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("822",50,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("823",49,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("824",50,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("825",50,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("826",50,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("827",50,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("828",49,1)
+		insert into pjtjk(班级,建档数,特殊减少) values ("829",51,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("830",51,0)
+
+
+	case nj=900 .and. fxmb=3	
+		insert into pjtjk(班级,建档数,特殊减少) values ("901",60,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("902",60,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("903",60,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("904",60,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("905",60,0)
+		
+		insert into pjtjk(班级,建档数,特殊减少) values ("906",61,2)
+		insert into pjtjk(班级,建档数,特殊减少) values ("907",61,0) &&
+		insert into pjtjk(班级,建档数,特殊减少) values ("908",60,1)
+		insert into pjtjk(班级,建档数,特殊减少) values ("909",60,1)
+		insert into pjtjk(班级,建档数,特殊减少) values ("910",60,0)
+		
+		insert into pjtjk(班级,建档数,特殊减少) values ("911",60,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("912",61,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("913",60,0) &&0131-1
+		insert into pjtjk(班级,建档数,特殊减少) values ("914",60,1) &&
+		insert into pjtjk(班级,建档数,特殊减少) values ("915",61,0)
+		
+		insert into pjtjk(班级,建档数,特殊减少) values ("916",60,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("917",61,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("918",59,0) &&
+		insert into pjtjk(班级,建档数,特殊减少) values ("919",61,2)
+		insert into pjtjk(班级,建档数,特殊减少) values ("920",61,0)
+		
+		insert into pjtjk(班级,建档数,特殊减少) values ("921",61,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("922",59,0) &&
+		insert into pjtjk(班级,建档数,特殊减少) values ("923",43,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("924",46,0)
+
+	case nj=700  .and. fxmb=3	 &&20200224确定，所有学籍生，去除因上一年级休学而不考评的
+		insert into pjtjk(班级,建档数,特殊减少) values ("701",51,1)
+		insert into pjtjk(班级,建档数,特殊减少) values ("702",51,0)&&0131-1
+		insert into pjtjk(班级,建档数,特殊减少) values ("703",51,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("704",51,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("705",51,0)
+		
+		insert into pjtjk(班级,建档数,特殊减少) values ("706",51,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("707",50,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("708",51,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("709",50,0)&&0131-1
+		insert into pjtjk(班级,建档数,特殊减少) values ("710",51,0)
+		
+		insert into pjtjk(班级,建档数,特殊减少) values ("711",51,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("712",50,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("713",51,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("714",51,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("715",53,0)
+		
+		insert into pjtjk(班级,建档数,特殊减少) values ("716",53,0)&&0131+1
+		insert into pjtjk(班级,建档数,特殊减少) values ("717",54,0)&&0131+2
+		insert into pjtjk(班级,建档数,特殊减少) values ("718",53,2)&&0131+1
+		insert into pjtjk(班级,建档数,特殊减少) values ("719",53,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("720",53,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("721",54,1)&&0131+1
+		insert into pjtjk(班级,建档数,特殊减少) values ("722",53,0)&&0131+1
+		insert into pjtjk(班级,建档数,特殊减少) values ("723",53,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("724",53,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("725",53,0)
+		insert into pjtjk(班级,建档数,特殊减少) values ("726",53,1)&&0131+2
+
+	endcase
+	
+	*******************************

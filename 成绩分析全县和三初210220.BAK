@@ -39,21 +39,32 @@ creat table tjk(学校 c(8),班级 c(8),总分上 n(8),总人数 n(8),总成绩 n(8,2),语文 n
 	语文率 n(8,2),数学率 n(8,2),英语率 n(8,2), 物理率 n(8,2),化学率 n(8,2),;
 	道法率 n(8,2),历史率 n(8,2),地理率 n(8,2),生物率 n(8,2),校名 c(8) ) &&统计库,县析增加各种率
 
-creat table mck(mc n(8)) &&名次库,仅县析用
-	insert into mck(mc) value (10)
-	insert into mck(mc) value (50)
-	insert into mck(mc) value (100)
-	insert into mck(mc) value (200)
-	insert into mck(mc) value (500)
-	insert into mck(mc) value (700)
-	insert into mck(mc) value (1000) 
-	insert into mck(mc) value (1500)
-	insert into mck(mc) value (2000)
-	insert into mck(mc) value (2500)
-	insert into mck(mc) value (3000)
-	insert into mck(mc) value (3500)
-	insert into mck(mc) value (4000)
-	insert into mck(mc) value (4500) 
+creat table mck(mc n(8),mcd n(8)) &&名次库,仅县析用
+	if fxmb=1
+		insert into mck(mc) value (10)
+		insert into mck(mc) value (50)
+		insert into mck(mc) value (100)
+		insert into mck(mc) value (200)
+		insert into mck(mc) value (500)
+		insert into mck(mc) value (700)
+		insert into mck(mc) value (1000) 
+		insert into mck(mc) value (1500)
+		insert into mck(mc) value (2000)
+		insert into mck(mc) value (2500)
+		insert into mck(mc) value (3000)
+		insert into mck(mc) value (3500)
+		insert into mck(mc) value (4000)
+		insert into mck(mc) value (4500) 
+	else
+		zd='1000'
+		 @12,20 SAY '请输入1000名对应查询人数:' get zd
+		  @14,20 SAY '请输入4500名对应查询人数:' get zd1
+		 read
+		名次1=val(zd)
+		insert into mck(mc,mcd) value (名次1,1000)
+		名次1=val(zd1)
+		insert into mck(mc,mcd) value (名次1,4500)
+	endif
 
 creat table pjtjk(班级 c(3),建档数 n(8),特殊减少 n(8) ,考评人数 n(8,0),平均分 n(8,3), ;
 		语文 n(8,3),数学 n(8,3),英语 n(8,3),物理 n(8,3),化学 n(8,3),道法 n(8,3),历史 n(8,3),地理 n(8,3),生物 n(8,3),;
@@ -64,8 +75,12 @@ creat table pjtjk(班级 c(3),建档数 n(8),特殊减少 n(8) ,考评人数 n(8,0),平均分 n(
 do pjtjktc with nj,fxmb 	&&平均统计库填充，做成过程
 	** 将平均库放在最后，方便更新数据时直接下接找到
 
-
-		replace all 考评人数 with 建档数-int(nj/100)+6-特殊减少 &&年级7为减1人，8为减2人，9为减3人
+	if fxmb=1		&&	县析用98折，校析用减
+			replace all 人数98 with 建档数*0.98
+		else
+			replace all 考评人数 with 建档数-int(nj/100)+6-特殊减少 &&年级7为减1人，8为减2人，9为减3人
+	endif
+	
 creat table bjfx(班级 c(8),第1 n(8),前10 n(8),前20 n(8),前1000 n(8),前4500 n(8),平均分 n(8,3), ;
 	奖10 n(8),奖45 n(8),名次10 n(8),名次45 n(8),名次平均 n(8),名次和 n(10 ,6),排名 n(8),赋分 n(8,2) ) &&班级分析库
 	append from pjtjk fields 班级		
@@ -79,6 +94,14 @@ dele all
 pack
 appe from xx.dbf
 pack
+	if fxmb=1
+		replace all 学校 with subs(考号,4,2)
+	endif
+	n=messagebox("是否重算总成绩？",4,"") &&	是6否7
+	if n=6
+		replace all 总成绩 with 语文+数学+英语+物理+化学+道法+历史+地理+生物
+	endif
+
 do paixu with "语文","语文名次"
 do paixu with "数学","数学名次"
 do paixu with "英语","英语名次"
@@ -374,6 +397,7 @@ do shanchu with "x0"
 do shanchu with "pjtjk"
 do shanchu with "bjfx"
 do shanchu with "pjbzk"
+*	do shanchu with "mck"
 erase tjk.dbf
 ? "全部分析完成"
 SET TALK ON
